@@ -3,12 +3,21 @@
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
 version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-3.4
+      - test-3.5
+      - test-3.6
+      - test-3.7
+      - test-2.7
 jobs:
-  build:
+  test-3.6: &test-template
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
+      - image: circleci/python:3.6
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -49,12 +58,25 @@ jobs:
           command: |
             . venv/bin/activate
             pytest
-      - run:
-          name: Run Coverage
-          command: |
-            coverage run -m pytest
-            coverage report
-            coverage html
-
-      - store_artifacts:
-          path: htmlcov
+#      - run:
+#          name: Run Coverage
+#          command: |
+#            . venv/bin/activate
+#            coverage run -m pytest
+#            coverage report
+#            coverage html
+#
+#      - store_artifacts:
+#          path: htmlcov
+  test-3.5:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.5
+  test-3.7:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.7
+  test-2.7:
+    <<: *test-template
+    docker:
+      - image: circleci/python:2.7
