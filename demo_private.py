@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
 import json
 import time
 import requests
-import urllib.parse
+import sys
+
+try:
+    from urllib.parse import urlparse
+except:
+    from urlparse import urlparse
 import hmac
 import hashlib
 
@@ -15,6 +21,9 @@ def gen_nonce():
     return str(int(time.time() * 1000000))
 
 
+py3 = sys.version_info > (3, 0)
+
+
 def gen_sign(secret, verb, url, nonce, data_str):
     """Generate a request signature compatible with BitMEX."""
     # Parse the url so we can remove the base and extract just the path.
@@ -22,14 +31,17 @@ def gen_sign(secret, verb, url, nonce, data_str):
     if data_str is None:
         data_str = ''
 
-    parsed_url = urllib.parse.urlparse(url)
+    parsed_url = urlparse(url)
     path = parsed_url.path
 
     # print "Computing HMAC: %s" % verb + path + str(nonce) + data
     message = verb + path + str(nonce) + data_str
     # print(message)
 
-    signature = hmac.new(bytes(secret, 'utf8'), bytes(message, 'utf8'), digestmod=hashlib.sha256).hexdigest()
+    if py3:
+        signature = hmac.new(bytes(secret, 'utf8'), bytes(message, 'utf8'), digestmod=hashlib.sha256).hexdigest()
+    else:
+        signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
     return signature
 
 

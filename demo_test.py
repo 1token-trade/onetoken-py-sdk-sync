@@ -1,20 +1,19 @@
-from pathlib import Path
+import os
 
 import yaml
 
 
 def test_demo():
-    p = Path('~/.onetoken/config.yml').expanduser()
+    p = os.path.expanduser('~/.onetoken/config.yml')
     from demo_private import demo, Secret
-    if p.exists():
-        x = p.read_text()
-        x = yaml.load(x)
+    if os.path.exists(p):
+        x = open(p).read()
+        x = yaml.safe_load(x)
         print(x['ot_key'][:3])
         print(x['ot_secret'][:3])
         Secret.ot_key = x['ot_key']
         Secret.ot_secret = x['ot_secret']
     else:
-        import os
         Secret.ot_key = os.environ['OTKEY']
         Secret.ot_secret = os.environ['OTSECRET']
 
