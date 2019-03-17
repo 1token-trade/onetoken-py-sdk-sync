@@ -1,3 +1,4 @@
 arrow
 requests
 pyyaml
+pytest
