@@ -7,6 +7,7 @@ import sys
 try:
     from urllib.parse import urlparse
 except:
+    # noinspection PyUnresolvedReferences
     from urlparse import urlparse
 import hmac
 import hashlib
@@ -52,7 +53,7 @@ def api_call(method, endpoint, params=None, data=None, timeout=15):
 
     nonce = gen_nonce()
 
-    url = "https://1token.trade/api/v1/trade/" + endpoint
+    url = "https://1token.trade/api/v1/trade" + endpoint
 
     json_str = json.dumps(data) if data else ''
     sign = gen_sign(Secret.ot_secret, method, endpoint, nonce, json_str)
