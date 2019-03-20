@@ -25,19 +25,17 @@ def gen_nonce():
 py3 = sys.version_info > (3, 0)
 
 
-def gen_sign(secret, verb, url, nonce, data_str):
-    """Generate a request signature compatible with BitMEX."""
+def gen_sign(secret, verb, endpoint, nonce, data_str):
     # Parse the url so we can remove the base and extract just the path.
 
     if data_str is None:
         data_str = ''
 
-    parsed_url = urlparse(url)
+    parsed_url = urlparse(endpoint)
     path = parsed_url.path
 
     # print "Computing HMAC: %s" % verb + path + str(nonce) + data
     message = verb + path + str(nonce) + data_str
-    # print(message)
 
     if py3:
         signature = hmac.new(bytes(secret, 'utf8'), bytes(message, 'utf8'), digestmod=hashlib.sha256).hexdigest()
@@ -46,14 +44,14 @@ def gen_sign(secret, verb, url, nonce, data_str):
     return signature
 
 
-def api_call(method, endpoint, params=None, data=None, timeout=15):
+def api_call(method, endpoint, params=None, data=None, timeout=15, host='https://1token.trade/api/v1/trade'):
     assert params is None or isinstance(params, dict)
     assert data is None or isinstance(data, dict)
     method = method.upper()
 
     nonce = gen_nonce()
 
-    url = "https://1token.trade/api/v1/trade" + endpoint
+    url = host + endpoint
 
     json_str = json.dumps(data) if data else ''
     sign = gen_sign(Secret.ot_secret, method, endpoint, nonce, json_str)
