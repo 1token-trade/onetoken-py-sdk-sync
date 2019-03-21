@@ -5,11 +5,17 @@
 version: 2
 workflows:
   version: 2
-  test:
+  test-1:
     jobs:
       - test-3.5
+  test-2:
+    jobs:
       - test-3.6
+  test-3:
+    jobs:
       - test-3.7
+  test-4:
+    jobs:
       - test-2.7
 jobs:
   test-3.6: &test-template
