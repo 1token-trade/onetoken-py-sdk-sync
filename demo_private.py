@@ -72,13 +72,15 @@ def demo(account):
 
     print('下单')
     r = api_call('POST', '/{}/orders'.format(account),
-                 data={'contract': 'okex/btc.usdt', 'price': 10, 'bs': 'b', 'amount': 1})
+                 data={'contract': 'okex/btc.usdt', 'price': 10, 'bs': 'b', 'amount': 1, 'options': {'close': True}})
     print(r.json())
+    assert r.json()['client_oid']
     exg_oid = r.json()['exchange_oid']
 
     print('查询挂单 应该有一个挂单')
     r = api_call('GET', '/{}/orders'.format(account))
     print(r.json())
+    assert len(r.json()) == 1
 
     print('用 exchange oid撤单')
     r = api_call('DELETE', '/{}/orders'.format(account), params={'exchange_oid': exg_oid})
@@ -87,6 +89,7 @@ def demo(account):
     print('查询挂单 应该没有挂单')
     r = api_call('GET', '/{}/orders'.format(account))
     print(r.json())
+    assert len(r.json()) == 0
 
 
 def main():
