@@ -478,174 +478,174 @@ class Account:
             return None, err
         return res, None
 
-    def set_ws_state(self, new, reason=''):
-        log.info(f'set ws state from {self.ws_state} to {new}', reason)
-        self.ws_state = new
-
-    def keep_connection(self):
-        while self.is_running:
-            if not self.ws_support:
-                break
-            if self.ws_state == GOING_TO_CONNECT:
-                self.ws_connect()
-            elif self.ws_state == READY:
-                try:
-                    while not self.ws.closed:
-                        ping = datetime.now().timestamp()
-                        self.ws.send_json({'uri': 'ping', 'uuid': ping})
-                        time.sleep(10)
-                        if self.last_pong < ping:
-                            log.warning('ws connection heartbeat lost')
-                            break
-                except:
-                    log.exception('ws connection ping failed')
-                finally:
-                    self.set_ws_state(GOING_TO_CONNECT, 'heartbeat lost')
-            elif self.ws_state == GOING_TO_DICCONNECT:
-                self.ws.close()
-            time.sleep(1)
-
-    def ws_connect(self):
-        self.set_ws_state(CONNECTING)
-        nonce = gen_nonce()
-        sign = gen_sign(self.api_secret, 'GET', f'/ws/{self.name}', nonce, None)
-        headers = {'Api-Nonce': str(nonce), 'Api-Key': self.api_key, 'Api-Signature': sign}
-        url = self.ws_path
-        try:
-            print(url)
-            self.ws = self.session.ws_connect(url, autoping=False, headers=headers, timeout=30)
-        except:
-            self.set_ws_state(GOING_TO_CONNECT, 'ws connect failed')
-            log.exception('ws connect failed')
-            time.sleep(5)
-        else:
-            log.info('ws connected.')
-            self.on_msg()
-
-    def on_msg(self):
-        while not self.ws.closed:
-            msg = self.ws.receive()
-            try:
-                if msg.type == 0x1:  # aiohttp.WSMsgType.TEXT
-                    self.handle_message(msg.data)
-                elif msg.type == 0x101:  # aiohttp.WSMsgType.CLOSED
-                    log.info('websocket closed')
-                    break
-                elif msg.type == 0x102:  # aiohttp.WSMsgType.ERROR
-                    log.warning('error', msg)
-                    break
-            except Exception as e:
-                log.warning('msg error...', e)
-        self.set_ws_state(GOING_TO_CONNECT, 'ws was disconnected...')
-
-    def handle_message(self, msg):
-        try:
-            data = json.loads(msg)
-            log.debug(data)
-            if 'uri' not in data:
-                if 'code' in data:
-                    code = data['code']
-                    if code == 'no-router-found':
-                        log.warning('ws push not supported for this exchange {}'.format(self.exchange))
-                        self.ws_support = False
-                        return
-                log.warning('unexpected msg get', data)
-                return
-            action = data['uri']
-            if action == 'pong':
-                self.last_pong = datetime.now().timestamp()
-                return
-            if action in ['connection', 'status']:
-                if data.get('code', data.get('status', None)) in ['ok', 'connected']:
-                    self.set_ws_state(READY, 'Connected and auth passed.')
-                    for key in self.sub_queue.keys():
-                        self.ws.send_json({'uri': 'sub-{}'.format(key)})
-                else:
-                    self.set_ws_state(GOING_TO_CONNECT, data['message'])
-            elif action == 'info':
-                if data.get('status', 'ok') == 'ok':
-                    if 'info' not in self.sub_queue:
-                        return
-                    info = data['data']
-                    info = Info(info)
-                    for handler in self.sub_queue['info'].values():
-                        try:
-                            handler(info)
-                        except:
-                            log.exception('handle info error')
-            elif action == 'order' and 'order' in self.sub_queue:
-                if data.get('status', 'ok') == 'ok':
-                    for order in data['data']:
-                        exg_oid = order['exchange_oid']
-                        log.debug('order info updating', exg_oid, status=order['status'])
-                        if exg_oid not in self.sub_queue['order']:
-                            q = Queue()
-                            self.sub_queue['order'][exg_oid] = q
-                            self.ensure_order_dequeued(exg_oid)
-                        self.sub_queue['order'][exg_oid].put_nowait(order)
-                        if '*' in self.sub_queue['order']:
-                            h = self.sub_queue['order']['*']
-                            h(order)
-                else:
-                    # todo 这里处理order 拿到 error 的情况
-                    log.warning('order update error message', data)
-            else:
-                log.info(f'receive message {data}')
-        except Exception as e:
-            log.warning('unexpected msg format', msg, e)
-
-    def ensure_order_dequeued(self, exg_oid):
-        timeout = 10
-        bg = datetime.now()
-        while 'order' in self.sub_queue and exg_oid in self.sub_queue['order'] \
-                and not self.sub_queue['order'][exg_oid].empty():
-            if (datetime.now() - bg).total_seconds() > timeout:
-                del self.sub_queue['order'][exg_oid]
-                break
-            time.sleep(2)
-
-    def subscribe_info(self, handler, handler_name=None):
-        if not self.ws_support:
-            log.warning('ws push not supported for this exchange {}'.format(self.exchange))
-            return
-        if 'info' not in self.sub_queue:
-            self.sub_queue['info'] = {}
-        if handler_name is None:
-            handler_name = 'default'
-        self.sub_queue['info'][handler_name] = handler
-        if self.ws_state == READY:
-            self.ws.send_json({'uri': 'sub-info'})
-        elif self.ws_state == IDLE:
-            self.set_ws_state(GOING_TO_CONNECT, 'user sub info')
-
-    def unsubscribe_info(self, handler_name=None):
-        if handler_name is None:
-            handler_name = 'default'
-        if 'info' in self.sub_queue:
-            del self.sub_queue['info'][handler_name]
-            if len(self.sub_queue['info']) == 0 and self.ws_state == READY:
-                self.ws.send_json({'uri': 'unsub-info'})
-                del self.sub_queue['info']
-            if not self.sub_queue and self.ws_state != IDLE:
-                self.set_ws_state(GOING_TO_DICCONNECT, 'subscribe nothing')
-
-    def subscribe_orders(self, handler=None):
-        if 'order' not in self.sub_queue:
-            self.sub_queue['order'] = {}
-        if handler is not None:
-            self.sub_queue['order']['*'] = handler
-        if self.ws_state == READY:
-            self.ws.send_json({'uri': 'sub-order'})
-        elif self.ws_state == IDLE:
-            self.set_ws_state(GOING_TO_CONNECT, 'user sub order')
-
-    def unsubcribe_orders(self):
-        if 'order' in self.sub_queue:
-            del self.sub_queue['order']
-        if self.ws_state == READY:
-            self.ws.send_json({'uri': 'unsub-order'})
-        if not self.sub_queue and self.ws_state != IDLE:
-            self.set_ws_state(GOING_TO_DICCONNECT, 'subscribe nothing')
+    # def set_ws_state(self, new, reason=''):
+    #     log.info(f'set ws state from {self.ws_state} to {new}', reason)
+    #     self.ws_state = new
+    #
+    # def keep_connection(self):
+    #     while self.is_running:
+    #         if not self.ws_support:
+    #             break
+    #         if self.ws_state == GOING_TO_CONNECT:
+    #             self.ws_connect()
+    #         elif self.ws_state == READY:
+    #             try:
+    #                 while not self.ws.closed:
+    #                     ping = datetime.now().timestamp()
+    #                     self.ws.send_json({'uri': 'ping', 'uuid': ping})
+    #                     time.sleep(10)
+    #                     if self.last_pong < ping:
+    #                         log.warning('ws connection heartbeat lost')
+    #                         break
+    #             except:
+    #                 log.exception('ws connection ping failed')
+    #             finally:
+    #                 self.set_ws_state(GOING_TO_CONNECT, 'heartbeat lost')
+    #         elif self.ws_state == GOING_TO_DICCONNECT:
+    #             self.ws.close()
+    #         time.sleep(1)
+    #
+    # def ws_connect(self):
+    #     self.set_ws_state(CONNECTING)
+    #     nonce = gen_nonce()
+    #     sign = gen_sign(self.api_secret, 'GET', f'/ws/{self.name}', nonce, None)
+    #     headers = {'Api-Nonce': str(nonce), 'Api-Key': self.api_key, 'Api-Signature': sign}
+    #     url = self.ws_path
+    #     try:
+    #         print(url)
+    #         self.ws = self.session.ws_connect(url, autoping=False, headers=headers, timeout=30)
+    #     except:
+    #         self.set_ws_state(GOING_TO_CONNECT, 'ws connect failed')
+    #         log.exception('ws connect failed')
+    #         time.sleep(5)
+    #     else:
+    #         log.info('ws connected.')
+    #         self.on_msg()
+    #
+    # def on_msg(self):
+    #     while not self.ws.closed:
+    #         msg = self.ws.receive()
+    #         try:
+    #             if msg.type == 0x1:  # aiohttp.WSMsgType.TEXT
+    #                 self.handle_message(msg.data)
+    #             elif msg.type == 0x101:  # aiohttp.WSMsgType.CLOSED
+    #                 log.info('websocket closed')
+    #                 break
+    #             elif msg.type == 0x102:  # aiohttp.WSMsgType.ERROR
+    #                 log.warning('error', msg)
+    #                 break
+    #         except Exception as e:
+    #             log.warning('msg error...', e)
+    #     self.set_ws_state(GOING_TO_CONNECT, 'ws was disconnected...')
+    #
+    # def handle_message(self, msg):
+    #     try:
+    #         data = json.loads(msg)
+    #         log.debug(data)
+    #         if 'uri' not in data:
+    #             if 'code' in data:
+    #                 code = data['code']
+    #                 if code == 'no-router-found':
+    #                     log.warning('ws push not supported for this exchange {}'.format(self.exchange))
+    #                     self.ws_support = False
+    #                     return
+    #             log.warning('unexpected msg get', data)
+    #             return
+    #         action = data['uri']
+    #         if action == 'pong':
+    #             self.last_pong = datetime.now().timestamp()
+    #             return
+    #         if action in ['connection', 'status']:
+    #             if data.get('code', data.get('status', None)) in ['ok', 'connected']:
+    #                 self.set_ws_state(READY, 'Connected and auth passed.')
+    #                 for key in self.sub_queue.keys():
+    #                     self.ws.send_json({'uri': 'sub-{}'.format(key)})
+    #             else:
+    #                 self.set_ws_state(GOING_TO_CONNECT, data['message'])
+    #         elif action == 'info':
+    #             if data.get('status', 'ok') == 'ok':
+    #                 if 'info' not in self.sub_queue:
+    #                     return
+    #                 info = data['data']
+    #                 info = Info(info)
+    #                 for handler in self.sub_queue['info'].values():
+    #                     try:
+    #                         handler(info)
+    #                     except:
+    #                         log.exception('handle info error')
+    #         elif action == 'order' and 'order' in self.sub_queue:
+    #             if data.get('status', 'ok') == 'ok':
+    #                 for order in data['data']:
+    #                     exg_oid = order['exchange_oid']
+    #                     log.debug('order info updating', exg_oid, status=order['status'])
+    #                     if exg_oid not in self.sub_queue['order']:
+    #                         q = Queue()
+    #                         self.sub_queue['order'][exg_oid] = q
+    #                         self.ensure_order_dequeued(exg_oid)
+    #                     self.sub_queue['order'][exg_oid].put_nowait(order)
+    #                     if '*' in self.sub_queue['order']:
+    #                         h = self.sub_queue['order']['*']
+    #                         h(order)
+    #             else:
+    #                 # todo 这里处理order 拿到 error 的情况
+    #                 log.warning('order update error message', data)
+    #         else:
+    #             log.info(f'receive message {data}')
+    #     except Exception as e:
+    #         log.warning('unexpected msg format', msg, e)
+    #
+    # def ensure_order_dequeued(self, exg_oid):
+    #     timeout = 10
+    #     bg = datetime.now()
+    #     while 'order' in self.sub_queue and exg_oid in self.sub_queue['order'] \
+    #             and not self.sub_queue['order'][exg_oid].empty():
+    #         if (datetime.now() - bg).total_seconds() > timeout:
+    #             del self.sub_queue['order'][exg_oid]
+    #             break
+    #         time.sleep(2)
+    #
+    # def subscribe_info(self, handler, handler_name=None):
+    #     if not self.ws_support:
+    #         log.warning('ws push not supported for this exchange {}'.format(self.exchange))
+    #         return
+    #     if 'info' not in self.sub_queue:
+    #         self.sub_queue['info'] = {}
+    #     if handler_name is None:
+    #         handler_name = 'default'
+    #     self.sub_queue['info'][handler_name] = handler
+    #     if self.ws_state == READY:
+    #         self.ws.send_json({'uri': 'sub-info'})
+    #     elif self.ws_state == IDLE:
+    #         self.set_ws_state(GOING_TO_CONNECT, 'user sub info')
+    #
+    # def unsubscribe_info(self, handler_name=None):
+    #     if handler_name is None:
+    #         handler_name = 'default'
+    #     if 'info' in self.sub_queue:
+    #         del self.sub_queue['info'][handler_name]
+    #         if len(self.sub_queue['info']) == 0 and self.ws_state == READY:
+    #             self.ws.send_json({'uri': 'unsub-info'})
+    #             del self.sub_queue['info']
+    #         if not self.sub_queue and self.ws_state != IDLE:
+    #             self.set_ws_state(GOING_TO_DICCONNECT, 'subscribe nothing')
+    #
+    # def subscribe_orders(self, handler=None):
+    #     if 'order' not in self.sub_queue:
+    #         self.sub_queue['order'] = {}
+    #     if handler is not None:
+    #         self.sub_queue['order']['*'] = handler
+    #     if self.ws_state == READY:
+    #         self.ws.send_json({'uri': 'sub-order'})
+    #     elif self.ws_state == IDLE:
+    #         self.set_ws_state(GOING_TO_CONNECT, 'user sub order')
+    #
+    # def unsubcribe_orders(self):
+    #     if 'order' in self.sub_queue:
+    #         del self.sub_queue['order']
+    #     if self.ws_state == READY:
+    #         self.ws.send_json({'uri': 'unsub-order'})
+    #     if not self.sub_queue and self.ws_state != IDLE:
+    #         self.set_ws_state(GOING_TO_DICCONNECT, 'subscribe nothing')
 
     @staticmethod
     def load_ot_from_config_file():
