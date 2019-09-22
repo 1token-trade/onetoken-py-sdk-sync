@@ -1,11 +1,13 @@
+import time
+
 import pytest
 import logging
 
-from onetokensdk import Account
+from onetoken import Account
 
 logging.basicConfig(level=logging.INFO)
-contract = 'zb/omg.usdt'
-place_order_params = (contract, 1, 'b', 1)
+contract = 'binance/eos.usdt'
+place_order_params = {'con': contract, 'price': 10, 'bs': 's', 'amount': 1}
 
 
 @pytest.fixture(scope='session')
@@ -15,7 +17,7 @@ def acc():
 
 
 def post_order_get_oid(acc):
-    oid, err = acc.place_order(*place_order_params)
+    oid, err = acc.place_order(**place_order_params)
     logging.info(oid)
     assert not err
     assert oid['exchange_oid']
@@ -85,18 +87,34 @@ def test_cancel_all(acc: Account):
     assert type(pl) is list
     assert len(pl) == 0
 
+
 # @pytest.mark.skip(reason=None)
 # def test_get_order_use_client_oid(acc: Account):
 #     order, err = acc.get_order_use_client_oid('zb/omg.usdt-123321')
 #     logging.info(order)
 #     assert not err
 #
-# def main():
-#     acc = Account(symbol='zb/otplay')
-#     res, err = acc.get_pending_list(contract)
-#     print(res)
-#     print(err)
-#
-#
-# if __name__ == '__main__':
-#     main()
+
+def h(*args, **kwargs):
+    print(args, kwargs)
+
+
+def test_subscribe_info():
+    acc = Account(symbol='binance/otplay')
+    acc.ws.subscribe_info(h)
+    print(acc.get_info())
+    time.sleep(30)
+
+
+def main():
+    acc = Account(symbol='binance/otplay')
+    acc.ws.subscribe_orders(h)
+    time.sleep(10)
+    print(acc.place_order(**place_order_params))
+    time.sleep(5)
+    print(acc.cancel_all(contract))
+    time.sleep(30)
+
+
+if __name__ == '__main__':
+    main()

@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from codecs import open
 
 
-with open('onetokensdk/__init__.py', 'r', encoding='utf8') as fd:
+with open('onetoken/__init__.py', 'r', encoding='utf8') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
     print('regex find version', version)
 if not version:
@@ -37,6 +37,7 @@ setup(name='onetokensyncsdk',
           'PyJWT>=1.6',
           'PyYAML>=3',
           'requests>2.18',
+          'websocket_client>=0.56.0'
       ],
       zip_safe=False,
       )
