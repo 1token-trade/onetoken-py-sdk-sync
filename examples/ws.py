@@ -17,18 +17,18 @@ def sub_order():
     ws = WS(symbol='binance/otplay')
     ws.setDaemon(True)
     ws.start()
-    # You can also get websocket from Account()
-    time.sleep(2)
+    time.sleep(2)  # wait for websocket
     ws.subscribe_info(h)
     time.sleep(10)
+    ws.close()
+    time.sleep(5)
 
 
 def send_message():
     ws = WS(symbol='binance/otplay')
     ws.setDaemon(True)
     ws.start()
-    # You can also get websocket from Account()
-    time.sleep(2)
+    time.sleep(2)  # wait for websocket
     ws.send_message("hello world")
     ws.send_json({'uri': 'ping', 'uuid': int(time.time())})
     time.sleep(5)

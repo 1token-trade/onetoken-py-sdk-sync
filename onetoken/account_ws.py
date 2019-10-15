@@ -17,11 +17,9 @@ try:
 except ImportError:
     # noinspection PyUnresolvedReferences
     from urlparse import urlparse
-from .model import Info, Order
+from .model import Info
 import websocket
 
-
-# todo 要有一个 stop 方法
 
 class WS(threading.Thread):
     IDLE = 'idle'
@@ -70,7 +68,8 @@ class WS(threading.Thread):
                     except:
                         log.exception('ws connection ping failed')
                     finally:
-                        self.set_ws_state(self.GOING_TO_CONNECT, 'heartbeat lost')
+                        if self.is_running:
+                            self.set_ws_state(self.GOING_TO_CONNECT, 'heartbeat lost')
                 elif self.ws_state == self.GOING_TO_DICCONNECT:
                     self.ws.close()
                 time.sleep(1)
@@ -198,7 +197,6 @@ class WS(threading.Thread):
             if len(self.sub_queue['info']) == 0 and self.ws_state == self.READY:
                 self.send_json({'uri': 'unsub-info'})
                 del self.sub_queue['info']
-            # todo 看一下是不是async 方法里也有这个逻辑
             if not self.sub_queue and self.ws_state != self.IDLE:
                 self.set_ws_state(self.GOING_TO_DICCONNECT, 'subscribe nothing')
 
@@ -235,3 +233,8 @@ class WS(threading.Thread):
                 self.ws.run_forever()
             else:
                 self.ws_connect()
+
+    def close(self):
+        self.is_running = False
+        self.set_ws_state(self.GOING_TO_DICCONNECT, 'close')
+        self.ws.close()

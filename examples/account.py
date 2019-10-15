@@ -1,5 +1,3 @@
-import time
-
 from onetoken import Account
 
 
@@ -38,14 +36,6 @@ def cancel_all():
     print(acc.cancel_all())
 
 
-def get_ws_from_account():
-    acc = Account(symbol='binance/otplay')
-    ws = acc.get_ws()
-    time.sleep(2)  # wait for connect websocket
-    ping = int(time.time())
-    ws.send_json({'uri': 'ping', 'uuid': ping})
-
-
 def h(*args, **kwargs):
     """
     callback function
@@ -56,19 +46,8 @@ def h(*args, **kwargs):
     print(args, kwargs)
 
 
-def ws_sub():
-    acc = Account(symbol='binance/otplay')
-    ws = acc.get_ws()
-    ws.subscribe_orders(h)
-    time.sleep(2)
-    print(acc.place_order(con='binance/eos.usdt', price=10, bs='s', amount=1))
-    time.sleep(2)
-    print(acc.cancel_all(contract='binance/eos.usdt'))
-    time.sleep(2)
-
-
 def main():
-    ws_sub()
+    get_info()
 
 
 if __name__ == '__main__':

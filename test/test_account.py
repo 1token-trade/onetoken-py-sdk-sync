@@ -1,5 +1,3 @@
-import time
-
 import pytest
 import logging
 
@@ -86,15 +84,3 @@ def test_cancel_all(acc: Account):
     assert not err
     assert type(pl) is list
     assert len(pl) == 0
-
-
-def h(*args, **kwargs):
-    print(args, kwargs)
-
-
-def test_subscribe_info():
-    acc = Account(symbol='binance/otplay')
-    ws = acc.get_ws()
-    ws.subscribe_info(h)
-    print(acc.get_info())
-    time.sleep(10)
