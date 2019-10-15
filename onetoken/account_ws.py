@@ -21,6 +21,8 @@ from .model import Info, Order
 import websocket
 
 
+# todo 要有一个 stop 方法
+
 class WS(threading.Thread):
     IDLE = 'idle'
     GOING_TO_CONNECT = 'going-to-connect'
@@ -196,6 +198,7 @@ class WS(threading.Thread):
             if len(self.sub_queue['info']) == 0 and self.ws_state == self.READY:
                 self.send_json({'uri': 'unsub-info'})
                 del self.sub_queue['info']
+            # todo 看一下是不是async 方法里也有这个逻辑
             if not self.sub_queue and self.ws_state != self.IDLE:
                 self.set_ws_state(self.GOING_TO_DICCONNECT, 'subscribe nothing')
 

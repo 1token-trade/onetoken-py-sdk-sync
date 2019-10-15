@@ -49,8 +49,10 @@ class Account:
         return '<{}:{}>'.format(self.__class__.__name__, self.symbol)
 
     def get_ws(self):
+        # todo 实例唯一
         ws = WS(symbol=self.symbol, api_key=self.api_key, api_secret=self.api_secret)
         ws.setDaemon(True)
+        # todo 移去别处
         ws.start()
         return ws
 
