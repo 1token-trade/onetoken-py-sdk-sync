@@ -1,4 +1,6 @@
-from onetoken import Account
+import time
+
+from onetoken import Account, WS
 
 
 # you need to configure ot_key and ot_secret at ~/.onetoken/config.yml
@@ -46,8 +48,25 @@ def h(*args, **kwargs):
     print(args, kwargs)
 
 
+def place_order_with_ws():
+    acc = Account(symbol='binance/otplay')
+    ws = WS(symbol='binance/otplay')
+    ws.setDaemon(True)
+
+    ws.start()
+    time.sleep(2)  # wait for websocket
+    ws.subscribe_orders(h)
+
+    print(acc.place_order(con='binance/eos.usdt', price=10, bs='s', amount=1))
+    time.sleep(2)
+    print(acc.cancel_all(contract='binance/eos.usdt'))
+    time.sleep(10)
+    ws.close()
+    time.sleep(3)
+
+
 def main():
-    get_info()
+    place_order_with_ws()
 
 
 if __name__ == '__main__':
