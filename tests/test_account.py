@@ -1,4 +1,5 @@
 import logging
+import time
 
 import pytest
 
@@ -82,6 +83,7 @@ def test_cancel_all(acc: Account):
     assert not err
     assert res['status'] == 'success'
     pl, err = acc.get_pending_list(contract)
+    time.sleep(2)
     assert not err
     assert type(pl) is list
     assert len(pl) == 0
