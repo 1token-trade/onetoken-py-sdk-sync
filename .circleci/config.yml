@@ -61,9 +61,9 @@ workflows:
   test-all:
     jobs:
       - test-3.6:
-      - test-3.7
-        requires:
-          - test-3.6
+      - test-3.7:
+          requires:
+            - test-3.6
       - test-3.5:
           requires:
             - test-3.7
