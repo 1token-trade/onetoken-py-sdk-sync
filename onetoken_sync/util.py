@@ -113,10 +113,6 @@ def load_ot_from_config_file():
         import yaml
         js = yaml.safe_load(open(config).read())
         ot_key, ot_secret = js.get('ot_key'), js.get('ot_secret')
-        if ot_key is None:
-            ot_key = js.get('api_key')
-        if ot_secret is None:
-            ot_secret = js.get('api_secret')
         return ot_key, ot_secret
     else:
         log.warning(f'load {config} fail')

@@ -34,6 +34,11 @@ jobs:
       # https://pytest.org
       # https://nose.readthedocs.io
       - run:
+          name: write config
+          command: |
+            bash -c 'mkdir ~/.onetoken && echo ot_key: $OTKEY >> ~/.onetoken/config.yml&&echo ot_secret: $OTSECRET >> ~/.onetoken/config.yml'
+
+      - run:
           name: run tests
           command: |
             pytest
