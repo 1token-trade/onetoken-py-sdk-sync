@@ -1,6 +1,6 @@
 import time
 
-from onetoken import WS
+from onetoken_sync import AccountWs
 
 
 def h(*args, **kwargs):
@@ -14,7 +14,7 @@ def h(*args, **kwargs):
 
 
 def sub_order():
-    ws = WS(symbol='binance/otplay')
+    ws = AccountWs(symbol='binance/otplay')
     ws.setDaemon(True)
     ws.start()
     time.sleep(2)  # wait for websocket
@@ -25,7 +25,7 @@ def sub_order():
 
 
 def send_message():
-    ws = WS(symbol='binance/otplay')
+    ws = AccountWs(symbol='binance/otplay')
     ws.setDaemon(True)
     ws.start()
     time.sleep(2)  # wait for websocket

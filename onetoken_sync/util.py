@@ -7,7 +7,6 @@ import time
 from urllib.parse import urlparse
 
 import arrow
-import jwt
 import requests
 
 from .config import Config
@@ -139,14 +138,6 @@ def get_ws_host(exg, name):
 def get_name_exchange(symbol):
     sp = symbol.split('/', 1)
     return sp[1], sp[0]
-
-
-def gen_jwt(secret, uid):
-    payload = {
-        'user': uid,
-    }
-    c = jwt.encode(payload, secret, algorithm='RS256', headers={'iss': 'qb-trade', 'alg': 'RS256', 'typ': 'JWT'})
-    return c.decode('ascii')
 
 
 def gen_sign(secret, verb, endpoint, nonce, data_str):

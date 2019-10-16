@@ -1,7 +1,7 @@
 import re
-from setuptools import setup, find_packages
 from codecs import open
 
+from setuptools import setup, find_packages
 
 with open('onetoken_sync/__init__.py', 'r', encoding='utf8') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
@@ -32,8 +32,6 @@ setup(name='onetoken_sync',
       ],
       install_requires=[
           'arrow>=0.12',
-          'docopt>=0.6',
-          'PyJWT>=1.6',
           'PyYAML>=3',
           'requests',
       ],

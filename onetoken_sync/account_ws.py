@@ -1,3 +1,4 @@
+import _thread as thread
 import json
 import queue
 import threading
@@ -11,7 +12,7 @@ from .logger import log
 from .model import Info
 
 
-class WS(threading.Thread):
+class AccountWs(threading.Thread):
     IDLE = 'idle'
     GOING_TO_CONNECT = 'going-to-connect'
     CONNECTING = 'connecting'
