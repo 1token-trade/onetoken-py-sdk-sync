@@ -2,8 +2,6 @@ import json
 import logging
 
 import arrow
-import dateutil
-import dateutil.parser
 
 
 class Tick:
@@ -227,33 +225,6 @@ class Contract:
                    data['id'], data['min_amount'], data['unit_amount'])
 
 
-class Candle:
-    def __init__(self, time, open, high, low, close, volume, contract, duration, amount=None):
-        self.contract = contract
-        self.time = time
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.volume = volume
-        self.amount = amount
-        self.duration = duration
-
-    def __str__(self):
-        return '<Candle-{}:{}-{} {} {} {} {} {} {}>'.format(self.duration, self.contract,
-                                                            self.time.strftime('%H:%M:%S'),
-                                                            self.open, self.high, self.low, self.close, self.volume,
-                                                            self.amount)
-
-    def __repr__(self):
-        return self.__str__()
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(arrow.get(data['time']), data['open'], data['high'], data['low'],
-                   data['close'], data['volume'], data['contract'], data['duration'], data.get('amount', None))
-
-
 class Info:
     def __init__(self, data):
         assert isinstance(data, dict)
@@ -359,9 +330,9 @@ class Order:
                   average_dealt_price=dct.get('average_dealt_price', 0),
                   bs=dct['bs'],
                   entrust_amount=dct['entrust_amount'],
-                  entrust_time=dateutil.parser.parse(dct['entrust_time']),
+                  entrust_time=arrow.get(dct['entrust_time']).datetime,
                   account_symbol=dct['account'],
-                  last_update=dateutil.parser.parse(dct['last_update']),
+                  last_update=arrow.get(dct['last_update']).datetime,
                   exg_oid=dct['exchange_oid'],
                   client_oid=dct['client_oid'],
                   status=dct['status'],
@@ -412,68 +383,6 @@ class Order:
     ALL_STATUSES = []
     ALL_STATUSES.extend(ACTIVE_STATUS)
     ALL_STATUSES.extend(END_STATUSES)
-
-
-class DealtTrans:
-    BUY = 'b'
-    SELL = 's'
-    MAKER = 'maker'
-    TAKER = 'taker'
-
-    def __init__(self, exchange_tid=None, exchange_oid=None, client_oid=None, dealt_price=None, bs=None,
-                 dealt_amount=None, commission=None, commission_currency=None, dealt_type=None, exchange_update=None,
-                 tags=None, account=None, contract=None):
-        self.client_oid = client_oid
-        self.dealt_price = dealt_price
-        self.bs = bs
-        self.dealt_amount = dealt_amount
-        self.exchange_oid = exchange_oid
-        self.exchange_tid = exchange_tid
-        self.commission = commission
-        self.commission_currency = commission_currency
-        self.dealt_type = dealt_type
-        self.exchange_update = exchange_update
-        self.tags = tags
-        self.account = account
-        self.contract = contract
-
-    def to_dict(self):
-        return {
-            'client_oid': self.client_oid,
-            'dealt_pr:ce': self.dealt_price,
-            'bs': self.bs,
-            'dealt_amount': self.dealt_amount,
-            'exchange_oid': self.exchange_oid,
-            'exchange_tid': self.exchange_tid,
-            'commission': self.commission,
-            'commission_currency': self.commission_currency,
-            'dealt_type': self.dealt_type,
-            'exchange_update': self.exchange_update,
-            'tags': self.tags,
-            'account': self.account,
-            'contract': self.contract
-        }
-
-    @classmethod
-    def from_dict(cls, dct):
-        client_oid = dct['client_oid']
-        dealt_price = dct['dealt_price']
-        bs = dct['bs']
-        dealt_amount = dct['dealt_amount']
-        exchange_oid = dct['exchange_oid']
-        exchange_tid = dct['exchange_tid']
-        commission = dct['commission']
-        commission_currency = dct['commission_currency']
-        dealt_type = dct['dealt_type']
-        exchange_update = dct['exchange_update']
-        tags = dct['tags']
-        account = dct['account']
-        contract = dct['contract']
-        return DealtTrans(exchange_tid=exchange_tid, exchange_oid=exchange_oid, client_oid=client_oid,
-                          dealt_price=dealt_price, bs=bs,
-                          dealt_amount=dealt_amount, commission=commission, commission_currency=commission_currency,
-                          dealt_type=dealt_type, exchange_update=exchange_update,
-                          tags=tags, account=account, contract=contract)
 
 
 class Error:

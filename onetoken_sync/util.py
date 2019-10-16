@@ -4,19 +4,14 @@ import json
 import random
 import string
 import time
+from urllib.parse import urlparse
 
 import arrow
 import jwt
 import requests
 
-from . import log
 from .config import Config
-
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    # noinspection PyUnresolvedReferences
-    from urlparse import urlparse
+from .logger import log
 
 
 def rand_id(length=10):

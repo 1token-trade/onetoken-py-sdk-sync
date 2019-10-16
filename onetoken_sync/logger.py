@@ -3,7 +3,7 @@ import logging
 import sys
 from pathlib import Path
 
-log = logging.getLogger('ots')
+log = logging.getLogger('onetoken')
 
 
 def set_log():
@@ -12,8 +12,7 @@ def set_log():
     # syslog.basicConfig()
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.DEBUG)
-    ch.setFormatter(
-        logging.Formatter('%(levelname)-.7s [%(asctime)s][1token]%(message)s', '%H:%M:%S'))
+    ch.setFormatter(logging.Formatter('%(levelname)-.7s [%(asctime)s][1token]%(message)s', '%H:%M:%S'))
     log.addHandler(ch)
     log.setLevel(logging.INFO)
 

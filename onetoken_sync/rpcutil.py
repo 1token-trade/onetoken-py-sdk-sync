@@ -5,7 +5,7 @@ class Const:
     LOGIC_ERROR = 'LOGIC_ERROR'  # 下单价格不对。 下单钱不够 订单号不存在等
 
 
-class ServiceError(Exception):
+class Error(Exception):
     def __init__(self, code, message=''):
         self.code = code
         self.message = message
@@ -14,7 +14,7 @@ class ServiceError(Exception):
         return 'ServiceError<{},{}>'.format(self.code, self.message)
 
 
-class HTTPError(ServiceError):
+class HTTPError(Error):
     TIMEOUT = 'TIMEOUT'  # timeout
     RESPONSE_5XX = 'RESPONSE_5XX'  # 服务器返回5xx错误
     RESPONSE_4XX = 'RESPONSE_4XX'  # 服务器返回4xx错误

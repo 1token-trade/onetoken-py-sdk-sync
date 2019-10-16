@@ -2,5 +2,5 @@ from .account import Account, Info
 from .account_ws import WS
 from .config import Config
 from .logger import log, log_level
-from .model import *
-from .rpcutil import ServiceError, HTTPError, Code, Const
+from .model import Tick, Order
+from .rpcutil import Error, HTTPError, Code, Const

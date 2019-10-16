@@ -38,7 +38,7 @@ def cancel_all():
     print(acc.cancel_all())
 
 
-def h(*args, **kwargs):
+def callback_order(*args, **kwargs):
     """
     callback function
     :param args:
@@ -55,7 +55,7 @@ def place_order_with_ws():
 
     ws.start()
     time.sleep(2)  # wait for websocket
-    ws.subscribe_orders(h)
+    ws.subscribe_orders(callback_order)
 
     print(acc.place_order(con='binance/eos.usdt', price=10, bs='s', amount=1))
     time.sleep(2)

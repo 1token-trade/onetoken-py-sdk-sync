@@ -5,13 +5,13 @@ import pytest
 from onetoken_sync import Account
 
 logging.basicConfig(level=logging.INFO)
-contract = 'zb/eos.usdt'
+contract = 'binance/eos.usdt'
 place_order_params = {'con': contract, 'price': 10, 'bs': 's', 'amount': 1}
 
 
 @pytest.fixture(scope='session')
 def acc():
-    acc = Account(symbol='zb/otplay')
+    acc = Account(symbol='binance/otplay')
     return acc
 
 

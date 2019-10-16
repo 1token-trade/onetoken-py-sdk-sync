@@ -1,16 +1,11 @@
 import json
-
-try:
-    import thread
-except ImportError:
-    import _thread as thread
 import time
 from typing import Tuple, Union
+
 import requests
 
-from . import log
 from . import util
-
+from .logger import log
 from .model import Info
 
 
