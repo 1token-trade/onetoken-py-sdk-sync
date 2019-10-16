@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from onetoken_sync import Account
+from . import Account
 
 logging.basicConfig(level=logging.INFO)
 contract = 'binance/eos.usdt'
