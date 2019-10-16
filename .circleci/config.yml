@@ -7,10 +7,7 @@ workflows:
   version: 2
   test-all:
     jobs:
-      - test-2.7
       - test-3.5:
-          requires:
-            - test-2.7
       - test-3.6:
           requires:
             - test-3.5
@@ -69,7 +66,3 @@ jobs:
     <<: *test-template
     docker:
       - image: circleci/python:3.7
-  test-2.7:
-    <<: *test-template
-    docker:
-      - image: circleci/python:2.7
