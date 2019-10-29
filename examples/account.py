@@ -1,6 +1,6 @@
 import time
 
-from onetoken_sync import Account, WS
+from onetoken_sync import Account, AccountWs
 
 
 # you need to configure ot_key and ot_secret at ~/.onetoken/config.yml
@@ -49,11 +49,10 @@ def callback_order(*args, **kwargs):
 
 
 def place_order_with_ws():
-    acc = Account(symbol='binance/otplay')
-    ws = WS(symbol='binance/otplay')
-    ws.setDaemon(True)
+    acc = Account(symbol='binance/otplay2')
+    ws = AccountWs(symbol='binance/otplay2')
 
-    ws.start()
+    ws.run()
     time.sleep(2)  # wait for websocket
     ws.subscribe_orders(callback_order)
 

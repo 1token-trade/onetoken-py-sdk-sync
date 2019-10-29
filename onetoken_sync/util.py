@@ -32,7 +32,7 @@ def rand_client_oid(contract_symbol):
     """
     now = arrow.now().format('YYYYMMDDHHmmss')
     rand = rand_id(14)
-    oid = f'{contract_symbol}-{now}{rand}'
+    oid = '%s-%s%s' % (contract_symbol, now, rand)
     return oid
 
 
@@ -45,7 +45,7 @@ def rand_client_wid(exchange, currency):
     """
     now = arrow.now().format('YYYYMMDD-HHmmss')
     rand = rand_id(5)
-    cwid = f'{exchange}/{currency}-{now}-{rand}'
+    cwid = '%s/%s-%s-%s' % (exchange, currency, now, rand)
     return cwid
 
 
@@ -109,13 +109,13 @@ def load_ot_from_config_file():
     import os
     config = os.path.expanduser('~/.onetoken/config.yml')
     if os.path.isfile(config):
-        log.info(f'load ot_key and ot_secret from {config}')
+        log.info('load ot_key and ot_secret from %s' % config)
         import yaml
         js = yaml.safe_load(open(config).read())
         ot_key, ot_secret = js.get('ot_key'), js.get('ot_secret')
         return ot_key, ot_secret
     else:
-        log.warning(f'load {config} fail')
+        log.warning('load %s fail' % config)
         return None, None
 
 

@@ -26,7 +26,7 @@ def set_log():
             new = ' '.join(filter(None, [left, right]))
             import inspect
             r = inspect.stack()[1]
-            new = f'[{Path(r.filename).name}:{r.lineno}] {new}'
+            new = '[%s:%s] %s' % (Path(r.filename).name, r.lineno, new)
             orig(new)
 
         return new_func

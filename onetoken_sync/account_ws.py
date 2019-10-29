@@ -1,7 +1,5 @@
 import _thread as thread
 import json
-import queue
-import threading
 import time
 from datetime import datetime
 
@@ -12,7 +10,7 @@ from .logger import log
 from .model import Info
 
 
-class AccountWs(threading.Thread):
+class AccountWs:
     IDLE = 'idle'
     GOING_TO_CONNECT = 'going-to-connect'
     CONNECTING = 'connecting'
@@ -29,7 +27,7 @@ class AccountWs(threading.Thread):
             self.api_secret = api_secret
         self.account, self.exchange = util.get_name_exchange(symbol)
         self.host_ws = util.get_ws_host(self.exchange, self.account)
-        self.is_running = True
+        self.is_running = False
         self.ws = None  # type: (websocket.WebSocketApp, None)
         self.ws_state = self.IDLE
         self.ws_support = True
@@ -37,7 +35,7 @@ class AccountWs(threading.Thread):
         self.sub_queue = {}
 
     def set_ws_state(self, new, reason=''):
-        log.info(f'set ws state from {self.ws_state} to {new}', reason)
+        log.info('set ws state from %s to %s' % (self.ws_state, new), reason)
         self.ws_state = new
 
     def keep_connection(self):
@@ -74,7 +72,7 @@ class AccountWs(threading.Thread):
     def ws_connect(self):
         self.set_ws_state(self.CONNECTING)
         nonce = util.gen_nonce()
-        sign = util.gen_sign(self.api_secret, 'GET', f'/ws/{self.account}', nonce, None)
+        sign = util.gen_sign(self.api_secret, 'GET', '/ws/' + self.account, nonce, None)
         headers = {'Api-Nonce': str(nonce), 'Api-Key': self.api_key, 'Api-Signature': sign}
         url = self.ws_path
         try:
@@ -137,34 +135,18 @@ class AccountWs(threading.Thread):
                     for order in data['data']:
                         exg_oid = order['exchange_oid']
                         log.debug('order info updating', exg_oid, status=order['status'])
-                        if exg_oid not in self.sub_queue['order']:
-                            q = queue.Queue()
-                            self.sub_queue['order'][exg_oid] = q
-                            self.order_dequeued(exg_oid)
-                        self.sub_queue['order'][exg_oid].put(order)
-                        if '*' in self.sub_queue['order']:
-                            h = self.sub_queue['order']['*']
-                            h(order)
+                        for handler in self.sub_queue['order'].values():
+                            try:
+                                handler(order)
+                            except:
+                                log.exception('handle info error')
                 else:
                     # todo 这里处理order 拿到 error 的情况
                     log.warning('order update error message', data)
             else:
-                log.info(f'receive message {data}')
+                log.info('receive message %s' % data)
         except Exception as e:
             log.warning('unexpected msg format', message, e)
-
-    def order_dequeued(self, exg_oid):
-        def run():
-            timeout = 10
-            bg = datetime.now()
-            while 'order' in self.sub_queue and exg_oid in self.sub_queue['order'] \
-                and not self.sub_queue['order'][exg_oid].empty():
-                if (datetime.now() - bg).total_seconds() > timeout:
-                    del self.sub_queue['order'][exg_oid]
-                    break
-                time.sleep(2)
-
-        thread.start_new_thread(run, ())
 
     def subscribe_info(self, handler, handler_name=None):
         if not self.ws_support:
@@ -174,58 +156,58 @@ class AccountWs(threading.Thread):
             self.sub_queue['info'] = {}
         if handler_name is None:
             handler_name = 'default'
+        if handler_name in self.sub_queue['info']:
+            log.warning('handler %s is already exist, will be overwrite' % handler_name)
         self.sub_queue['info'][handler_name] = handler
         if self.ws_state == self.READY:
             self.send_json({'uri': 'sub-info'})
         elif self.ws_state == self.IDLE:
             self.set_ws_state(self.GOING_TO_CONNECT, 'user sub info')
 
-    def unsubscribe_info(self, handler_name=None):
-        if handler_name is None:
-            handler_name = 'default'
-        if 'info' in self.sub_queue:
-            del self.sub_queue['info'][handler_name]
-            if len(self.sub_queue['info']) == 0 and self.ws_state == self.READY:
-                self.send_json({'uri': 'unsub-info'})
-                del self.sub_queue['info']
-            if not self.sub_queue and self.ws_state != self.IDLE:
-                self.set_ws_state(self.GOING_TO_DICCONNECT, 'subscribe nothing')
-
-    def subscribe_orders(self, handler=None):
+    def subscribe_orders(self, handler, handler_name=None):
+        if not self.ws_support:
+            log.warning('ws push not supported for this exchange {}'.format(self.exchange))
+            return
         if 'order' not in self.sub_queue:
             self.sub_queue['order'] = {}
-        if handler is not None:
-            self.sub_queue['order']['*'] = handler
+        if handler_name is None:
+            handler_name = 'default'
+        if handler_name in self.sub_queue['order']:
+            log.warning('handler %s is already exist, will be overwrite' % handler_name)
+        self.sub_queue['order'][handler_name] = handler
         if self.ws_state == self.READY:
             self.send_json({'uri': 'sub-order'})
         elif self.ws_state == self.IDLE:
             self.set_ws_state(self.GOING_TO_CONNECT, 'user sub order')
 
-    def unsubcribe_orders(self):
-        if 'order' in self.sub_queue:
-            del self.sub_queue['order']
-        if self.ws_state == self.READY:
-            self.send_json({'uri': 'unsub-order'})
-        if not self.sub_queue and self.ws_state != self.IDLE:
-            self.set_ws_state(self.GOING_TO_DICCONNECT, 'subscribe nothing')
-
     @staticmethod
     def on_error(ws, error):
-        print(error)
+        log.exception(error)
 
     @staticmethod
     def on_close(ws):
-        print("### websocket closed ###")
+        log.info("### websocket closed ###")
 
     def run(self) -> None:
-        while self.is_running:
-            if self.ws:
-                self.ws.on_open = self.keep_connection
-                self.ws.run_forever()
-            else:
-                self.ws_connect()
+        def _run():
+            while self.is_running:
+                if self.ws:
+                    self.ws.on_open = self.keep_connection
+                    self.ws.run_forever()
+                else:
+                    self.ws_connect()
+
+        if self.is_running:
+            log.warning('ws is already running')
+        else:
+            self.is_running = True
+            thread.start_new_thread(_run, ())
 
     def close(self):
         self.is_running = False
         self.set_ws_state(self.GOING_TO_DICCONNECT, 'close')
         self.ws.close()
+        self.ws = None  # type: (websocket.WebSocketApp, None)
+        self.ws_state = self.IDLE
+        self.last_pong = 0
+        self.sub_queue = {}

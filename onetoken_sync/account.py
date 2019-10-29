@@ -26,7 +26,7 @@ class Account:
         self.name, self.exchange = util.get_name_exchange(symbol)
         if '/' in self.name:
             self.name, margin_contract = self.name.split('/', 1)
-            self.margin_contract = f'{self.exchange}/{margin_contract}'
+            self.margin_contract = '%s/%s' % (self.exchange, margin_contract)
         else:
             self.margin_contract = None
         self.host = util.get_trans_host(self.exchange)
@@ -34,7 +34,6 @@ class Account:
             self.session = requests.session()
         else:
             self.session = session
-        self.sub_queue = {}
 
     def __str__(self):
         return '<{}>'.format(self.symbol)
@@ -71,7 +70,7 @@ class Account:
         :return:
         """
         if oids:
-            oid = f'{oid},{",".join(oids)}'
+            oid = oid + ',' + ",".join(oids)
         log.debug('Cancel use client oid', oid)
 
         data = {'client_oid': oid}
@@ -86,7 +85,7 @@ class Account:
         :return:
         """
         if oids:
-            oid = f'{oid},{",".join(oids)}'
+            oid = oid + ',' + ",".join(oids)
         log.debug('Cancel use exchange oid', oid)
         data = {'exchange_oid': oid}
         t = self.api_call('delete', '/orders', params=data)
@@ -106,7 +105,7 @@ class Account:
         if err:
             return None, err
         if not isinstance(y, dict):
-            return None, ValueError(f'{y} not dict')
+            return None, ValueError('%s not dict' % y)
         acc_info = Info(y)
         if self.margin_contract is not None:
             pos_symbol = self.margin_contract.split('/', 1)[-1]
@@ -134,7 +133,7 @@ class Account:
         :return:
         """
         if oids:
-            oid = f'{oid},{",".join(oids)}'
+            oid = oid + ',' + ",".join(oids)
         res = self.api_call('get', '/orders', params={'client_oid': oid})
         log.debug(res)
         return res
@@ -146,7 +145,7 @@ class Account:
         :return:
         """
         if oids:
-            oid = f'{oid},{",".join(oids)}'
+            oid = oid + ',' + ",".join(oids)
         res = self.api_call('get', '/orders', params={'exchange_oid': oid})
         log.debug(res)
         return res

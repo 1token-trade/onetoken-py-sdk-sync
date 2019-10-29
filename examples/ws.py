@@ -13,10 +13,16 @@ def h(*args, **kwargs):
     print(args, kwargs)
 
 
-def sub_order():
-    ws = AccountWs(symbol='binance/otplay')
-    ws.setDaemon(True)
-    ws.start()
+def sub_info():
+    ws = AccountWs(symbol='binance/otplay2')
+    ws.run()
+    time.sleep(2)  # wait for websocket
+    ws.subscribe_info(h)
+    time.sleep(10)
+    ws.close()
+    time.sleep(2)
+
+    ws.run()  # websocket run again after close
     time.sleep(2)  # wait for websocket
     ws.subscribe_info(h)
     time.sleep(10)
@@ -26,8 +32,7 @@ def sub_order():
 
 def send_message():
     ws = AccountWs(symbol='binance/otplay')
-    ws.setDaemon(True)
-    ws.start()
+    ws.run()
     time.sleep(2)  # wait for websocket
     ws.send_message("hello world")
     ws.send_json({'uri': 'ping', 'uuid': int(time.time())})
@@ -35,7 +40,7 @@ def send_message():
 
 
 def main():
-    sub_order()
+    sub_info()
 
 
 if __name__ == '__main__':
