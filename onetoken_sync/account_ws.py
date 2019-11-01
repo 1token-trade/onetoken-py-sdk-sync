@@ -157,7 +157,7 @@ class AccountWs:
         if handler_name is None:
             handler_name = 'default'
         if handler_name in self.sub_queue['info']:
-            log.warning('handler %s is already exist, will be overwrite' % handler_name)
+            log.warning('handler %s is already exist, will overwrite' % handler_name)
         self.sub_queue['info'][handler_name] = handler
         if self.ws_state == self.READY:
             self.send_json({'uri': 'sub-info'})
@@ -173,7 +173,7 @@ class AccountWs:
         if handler_name is None:
             handler_name = 'default'
         if handler_name in self.sub_queue['order']:
-            log.warning('handler %s is already exist, will be overwrite' % handler_name)
+            log.warning('handler %s is already exist, will overwrite' % handler_name)
         self.sub_queue['order'][handler_name] = handler
         if self.ws_state == self.READY:
             self.send_json({'uri': 'sub-order'})
@@ -205,7 +205,6 @@ class AccountWs:
 
     def close(self):
         self.is_running = False
-        self.set_ws_state(self.GOING_TO_DICCONNECT, 'close')
         self.ws.close()
         self.ws = None  # type: (websocket.WebSocketApp, None)
         self.ws_state = self.IDLE

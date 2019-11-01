@@ -7,6 +7,7 @@ import requests
 from . import util
 from .logger import log
 from .model import Info
+from .account_ws import AccountWs
 
 
 class Account:
@@ -34,12 +35,29 @@ class Account:
             self.session = requests.session()
         else:
             self.session = session
+        self._ws = AccountWs(self.symbol, self.api_key, self.api_secret)
 
     def __str__(self):
         return '<{}>'.format(self.symbol)
 
     def __repr__(self):
         return '<{}:{}>'.format(self.__class__.__name__, self.symbol)
+
+    @property
+    def ws(self):
+        return self._ws
+
+    def ws_start(self):
+        self._ws.run()
+
+    def ws_close(self):
+        self._ws.close()
+
+    def ws_subscribe_info(self, handler, handler_name=None):
+        self._ws.subscribe_info(handler, handler_name)
+
+    def ws_subscribe_orders(self, handler, handler_name=None):
+        self._ws.subscribe_orders(handler, handler_name)
 
     @property
     def trans_path(self):

@@ -50,17 +50,15 @@ def callback_order(*args, **kwargs):
 
 def place_order_with_ws():
     acc = Account(symbol='binance/otplay2')
-    ws = AccountWs(symbol='binance/otplay2')
-
-    ws.run()
+    acc.ws_start()
     time.sleep(2)  # wait for websocket
-    ws.subscribe_orders(callback_order)
+    acc.ws_subscribe_orders(callback_order)
 
     print(acc.place_order(con='binance/eos.usdt', price=10, bs='s', amount=1))
     time.sleep(2)
     print(acc.cancel_all(contract='binance/eos.usdt'))
     time.sleep(10)
-    ws.close()
+    acc.ws_close()
     time.sleep(3)
 
 
