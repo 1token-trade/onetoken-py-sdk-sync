@@ -57,7 +57,7 @@ def test_get_order_list(acc: Account):
 
 def test_get_pending_list(acc: Account):
     oid = post_order_get_oid(acc)
-    time.sleep(2)
+    time.sleep(5)
     pl, err = acc.get_pending_list(contract)
     logging.info(pl)
     assert not err
