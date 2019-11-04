@@ -18,7 +18,12 @@ class AccountWs:
     GOING_TO_DICCONNECT = 'going-to-disconnect'
 
     def __init__(self, symbol: str, api_key: str = None, api_secret: str = None):
-        super().__init__()
+        """
+        websocket 初始化
+        :param symbol:
+        :param api_key:
+        :param api_secret:
+        """
         self.symbol = symbol
         if api_key is None and api_secret is None:
             self.api_key, self.api_secret = util.load_ot_from_config_file()
@@ -35,10 +40,20 @@ class AccountWs:
         self.sub_queue = {}
 
     def set_ws_state(self, new, reason=''):
+        """
+        设置 ws 状态
+        :param new: ws 状态
+        :param reason:
+        :return: None
+        """
         log.info('set ws state from %s to %s' % (self.ws_state, new), reason)
         self.ws_state = new
 
     def keep_connection(self):
+        """
+        发送心跳包，保持连接
+        :return:
+        """
         def run():
             while self.is_running:
                 if not self.ws_support:
@@ -67,9 +82,17 @@ class AccountWs:
 
     @property
     def ws_path(self):
+        """
+        websocket 地址
+        :return: wss://1token.trade/api/v1/ws/trade/exg_name/acc_name
+        """
         return self.host_ws
 
     def ws_connect(self):
+        """
+        连接 websocket
+        :return: None
+        """
         self.set_ws_state(self.CONNECTING)
         nonce = util.gen_nonce()
         sign = util.gen_sign(self.api_secret, 'GET', '/ws/' + self.account, nonce, None)
@@ -90,12 +113,27 @@ class AccountWs:
             log.info('ws connected.')
 
     def send_message(self, message):
+        """
+        通过 websocket 发送消息
+        :param message: string
+        :return: None
+        """
         self.ws.send(message)
 
     def send_json(self, js):
+        """
+        通过 websocket 发送json
+        :param js: dict
+        :return: None
+        """
         self.ws.send(json.dumps(js))
 
     def on_message(self, message):
+        """
+        websocket 收到消息的回调
+        :param message: json
+        :return: None
+        """
         try:
             data = json.loads(message)
             log.debug(data)
@@ -149,6 +187,12 @@ class AccountWs:
             log.warning('unexpected msg format', message, e)
 
     def subscribe_info(self, handler, handler_name=None):
+        """
+        websocket 订阅 用户信息
+        :param handler: func 接收到信息的回调函数
+        :param handler_name: 回调方法名称
+        :return: None
+        """
         if not self.ws_support:
             log.warning('ws push not supported for this exchange {}'.format(self.exchange))
             return
@@ -165,6 +209,12 @@ class AccountWs:
             self.set_ws_state(self.GOING_TO_CONNECT, 'user sub info')
 
     def subscribe_orders(self, handler, handler_name=None):
+        """
+        websocket 订阅 订单信息
+        :param handler: func 接收到信息的回调函数
+        :param handler_name: 回调方法名称
+        :return: None
+        """
         if not self.ws_support:
             log.warning('ws push not supported for this exchange {}'.format(self.exchange))
             return
@@ -182,13 +232,28 @@ class AccountWs:
 
     @staticmethod
     def on_error(ws, error):
+        """
+        websocket 发生错误的回调
+        :param ws:
+        :param error:
+        :return: None
+        """
         log.exception(error)
 
     @staticmethod
     def on_close(ws):
+        """
+        websocket 关闭的回调
+        :param ws:
+        :return: None
+        """
         log.info("### websocket closed ###")
 
     def run(self) -> None:
+        """
+        运行 websocket
+        :return: None
+        """
         def _run():
             while self.is_running:
                 if self.ws:
@@ -204,6 +269,10 @@ class AccountWs:
             thread.start_new_thread(_run, ())
 
     def close(self):
+        """
+        关闭 websocket
+        :return: None
+        """
         self.is_running = False
         self.ws.close()
         self.ws = None  # type: (websocket.WebSocketApp, None)

@@ -3,6 +3,8 @@ import time
 from onetoken_sync import AccountWs
 
 
+# 下面所有方法为示例方法，用户使用时需要替换交易所名称、交易所账号、订单信息
+
 def h(*args, **kwargs):
     """
     callback function
@@ -14,6 +16,10 @@ def h(*args, **kwargs):
 
 
 def sub_info():
+    """
+    websocket 订阅 info 示例
+    :return: None
+    """
     ws = AccountWs(symbol='binance/otplay2')
     ws.run()
     time.sleep(2)  # wait for websocket
@@ -31,6 +37,10 @@ def sub_info():
 
 
 def send_message():
+    """
+    websocket 发生消息 示例
+    :return: None
+    """
     ws = AccountWs(symbol='binance/otplay')
     ws.run()
     time.sleep(2)  # wait for websocket
