@@ -30,10 +30,6 @@ def cancel_all(acc: Account):
     assert not err
     assert res['status'] == 'success'
     time.sleep(2)
-    pl, err = acc.get_pending_list(contract)
-    assert not err
-    assert type(pl) is list
-    assert len(pl) == 0
 
 
 def test_get_info(acc: Account):
