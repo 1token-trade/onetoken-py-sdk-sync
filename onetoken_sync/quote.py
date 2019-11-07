@@ -249,6 +249,11 @@ class TickV3Quote(Quote):
             et = arrow.get(data['et']) if 'et' in data else None
             tp = data['tp']
             q_key = json.dumps({'contract': c, 'uri': self.channel}, sort_keys=True)
+            if len(data['b']) > 0 and len(data['a']) > 0:
+                bid1, _ = data['b'][0]
+                ask1, _ = data['a'][0]
+                if bid1 >= ask1:
+                    log.warning('bid1 >= ask1', bid1, ask1)
             if tp == 's':
                 bids = [{'price': p, 'volume': v} for p, v in data['b']]
                 asks = [{'price': p, 'volume': v} for p, v in data['a']]
@@ -294,7 +299,6 @@ class CandleQuote(Quote):
     def __init__(self, key):
         super().__init__(key, Config.CANDLE_HOST_WS, self.parse_candle)
         self.channel = 'subscribe-single-candle'
-        self.authorized = True
 
     def parse_candle(self, data):
         try:
@@ -344,6 +348,7 @@ def get_client(key='defalut'):
 
 def subscribe_tick(contract, on_update):
     c = get_client()
+    c.run()
     return c.subscribe_tick(contract, on_update)
 
 
@@ -359,6 +364,7 @@ def get_v3_client():
 
 def subscribe_tick_v3(contract, on_update):
     c = get_v3_client()
+    c.run()
     return c.subscribe_tick_v3(contract, on_update)
 
 
@@ -376,6 +382,7 @@ def get_candle_client(key='defalut'):
 
 def subscribe_candle(contract, duration, on_update):
     c = get_candle_client()
+    c.run()
     return c.subscribe_candle(contract, duration, on_update)
 
 
@@ -393,6 +400,7 @@ def get_zhubi_client(key='defalut'):
 
 def subscribe_zhubi(contract, on_update):
     c = get_zhubi_client()
+    c.run()
     return c.subscribe_zhubi(contract, on_update)
 
 
