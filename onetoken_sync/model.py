@@ -385,6 +385,55 @@ class Order:
     ALL_STATUSES.extend(END_STATUSES)
 
 
+class Candle:
+    def __init__(self, time, open, high, low, close, volume, contract, duration, amount=None):
+        self.contract = contract
+        self.time = time
+        self.open = open
+        self.high = high
+        self.low = low
+        self.close = close
+        self.volume = volume
+        self.amount = amount
+        self.duration = duration
+
+    def __str__(self):
+        return '<Candle-{}:{}-{} {} {} {} {} {} {}>'.format(self.duration, self.contract,
+                                                            self.time.strftime('%H:%M:%S'),
+                                                            self.open, self.high, self.low, self.close, self.volume,
+                                                            self.amount)
+
+    def __repr__(self):
+        return self.__str__()
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(arrow.get(data['time']), data['open'], data['high'], data['low'],
+                   data['close'], data['volume'], data['contract'], data['duration'], data.get('amount', None))
+
+
+class Zhubi:
+    def __init__(self, time, exchange_time, contract, price, amount, bs):
+        self.contract = contract
+        self.time = time
+        self.exchange_time = exchange_time
+        self.price = price
+        self.amount = amount
+        self.bs = bs
+
+    def __str__(self):
+        return '<Zhubi-{}:{}-{} {} {}>'.format(self.contract, self.exchange_time, self.price, self.amount, self.bs)
+
+    def __repr__(self):
+        return self.__str__()
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(arrow.get(data['time']).datetime, arrow.get(data['exchange_time']).datetime, data['contract'],
+                   data['price'],
+                   data['amount'], data['bs'])
+
+
 class Error:
 
     def __init__(self, code, message='', status=400, data=None):
