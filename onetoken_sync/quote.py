@@ -42,7 +42,7 @@ class Quote:
                 except:
                     log.exception('close session fail')
                 self.ws = None
-                log.warning(f'try connect to {self.ws_url} failed, sleep for {sleep_seconds} seconds...', e)
+                log.warning('try connect to %s failed, sleep for %s seconds...' % (self.ws_url, sleep_seconds), e)
                 time.sleep(sleep_seconds)
                 sleep_seconds = min(sleep_seconds * 2, 64)
             else:
