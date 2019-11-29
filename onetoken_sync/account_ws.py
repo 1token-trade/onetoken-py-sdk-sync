@@ -26,7 +26,10 @@ class AccountWs:
         """
         self.symbol = symbol
         if api_key is None and api_secret is None:
-            self.api_key, self.api_secret = util.load_ot_from_config_file()
+            self.api_key, self.api_secret, ok = util.load_ot_from_config_file()
+            if not ok:
+                self.api_key = input('请输入你的api key：')
+                self.api_secret = input('请输入你的api secret：')
         else:
             self.api_key = api_key
             self.api_secret = api_secret

@@ -3,7 +3,7 @@ import time
 from onetoken_sync import Account
 
 
-# you need to configure ot_key and ot_secret at ~/.onetoken/config.yml
+# you need to configure ot_key and ot_secret at ~/onetoken/config.yml
 # look like
 # ot_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # ot_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx

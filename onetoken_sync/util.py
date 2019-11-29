@@ -107,16 +107,25 @@ def get_requests_sess():
 
 def load_ot_from_config_file():
     import os
-    config = os.path.expanduser('~/.onetoken/config.yml')
-    if os.path.isfile(config):
-        log.info('load ot_key and ot_secret from %s' % config)
+    config_yml = os.path.expanduser('~/onetoken/config.yml')
+    if os.path.isfile(config_yml):
+        log.info('load ot_key and ot_secret from %s' % config_yml)
         import yaml
-        js = yaml.safe_load(open(config).read())
+        js = yaml.safe_load(open(config_yml).read())
         ot_key, ot_secret = js.get('ot_key'), js.get('ot_secret')
-        return ot_key, ot_secret
-    else:
-        log.warning('load %s fail' % config)
-        return None, None
+        return ot_key, ot_secret, True
+    config_json = os.path.expanduser('~/onetoken/config.json')
+    if os.path.isfile(config_json):
+        log.info('load ot_key and ot_secret from %s' % config_json)
+        try:
+            js = json.loads(open(config_json).read())
+        except:
+            log.warning('load json file fail, path=%s' % config_json)
+            return None, None, False
+        ot_key, ot_secret = js.get('ot_key'), js.get('ot_secret')
+        return ot_key, ot_secret, True
+    log.warning('load %s and %s fail' % (config_yml, config_json))
+    return None, None, False
 
 
 def gen_nonce():
