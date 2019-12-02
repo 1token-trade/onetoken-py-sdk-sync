@@ -13,15 +13,10 @@ Synchronized python SDK for https://1token.trade based on requests
 pip install onetoken-sync
 
 ## Config
-在`~/.onetoken` 或者 `~/_onetoken` 目录下创建配置文件`config.yml` 或 `config.json`，配置文件内容如下：
+在`~/.onetoken` 或者 `~/_onetoken` 目录下创建配置文件 `config.json`，配置文件内容如下：
 (`~/`为用户根目录，例如：`C:\Users\用户名`)
-### config.yml
-```yaml
-ot_key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-ot_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
 
-### config.json
+### ~/.onetoken/config.json
 ```json
 {
     "ot_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -33,7 +28,7 @@ ot_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ```python
 import onetoken_sync as ot
-acc = ot.Account('binance/demo')
+acc = ot.Account('binance/demo') # binance/demo 换成 自己申请的账号
 info = acc.get_info()
 print(info)
 ```
